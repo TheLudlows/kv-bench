@@ -15,8 +15,6 @@
 import com.linkedin.paldb.api.Configuration;
 import com.linkedin.paldb.api.PalDB;
 import com.linkedin.paldb.api.StoreWriter;
-import com.linkedin.paldb.impl.GenerateTestData;
-import com.linkedin.paldb.utils.DirectoryUtils;
 import java.io.File;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;

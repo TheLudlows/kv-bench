@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import io.four.NanoBench;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.DB;
