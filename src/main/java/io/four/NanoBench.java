@@ -1,11 +1,12 @@
 package io.four;
 
-import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static io.four.utils.restoreJvm;
 
 
 /**
@@ -24,7 +25,7 @@ public class NanoBench {
     private List<MeasureListener> listeners;
 
     public NanoBench() {
-        listeners = new ArrayList<MeasureListener>(2);
+        listeners = new ArrayList(2);
         listeners.add(new CPUMeasure(logger));
         listeners.add(new MemoryUsage(logger));
     }
@@ -40,14 +41,14 @@ public class NanoBench {
     }
 
     public NanoBench cpuAndMemory() {
-        listeners = new ArrayList<MeasureListener>(2);
+        listeners = new ArrayList(2);
         listeners.add(new CPUMeasure(logger));
         listeners.add(new MemoryUsage(logger));
         return this;
     }
 
     public NanoBench bytesOnly() {
-        listeners = new ArrayList<MeasureListener>(1);
+        listeners = new ArrayList(1);
         listeners.add(new BytesMeasure(logger));
         return this;
     }
@@ -61,13 +62,13 @@ public class NanoBench {
     }
 
     public NanoBench cpuOnly() {
-        listeners = new ArrayList<MeasureListener>(1);
+        listeners = new ArrayList(1);
         listeners.add(new CPUMeasure(logger));
         return this;
     }
 
     public NanoBench memoryOnly() {
-        listeners = new ArrayList<MeasureListener>(1);
+        listeners = new ArrayList(1);
         listeners.add(new MemoryUsage(logger));
         return this;
     }
@@ -119,13 +120,11 @@ public class NanoBench {
     }
 
     public void measure(String label, Runnable task) {
-        MemoryUtil.restoreJvm();
+        restoreJvm();
         doWarmup(task);
-        MemoryUtil.restoreJvm();
-        stress();
+        restoreJvm();
         doMeasure(label, task);
-        stress();
-        MemoryUtil.restoreJvm();
+        restoreJvm();
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
@@ -133,46 +132,28 @@ public class NanoBench {
         }
     }
 
-    static int[] arrayStress = new int[10000];
-
-    private void stress() {
-        int m = 0;
-        for (int j = 0; j < 100; j++) {
-            int dummy = 0;
-            for (int i = 1; i < arrayStress.length; i++) {
-                arrayStress[i] = (int) Math.round(Math.log(i));
-                dummy += arrayStress[i - 1];
-            }
-            m += dummy;
-        }
-    }
-
     private void doMeasure(String label, Runnable task) {
         for (int i = 0; i < this.numberOfMeasurement; i++) {
-            TimeMeasureProxy tmp =
-                    new TimeMeasureProxy(new MeasureState(label, i, this.numberOfMeasurement), task, listeners);
-            tmp.run();
+            new MeasureProxy(new MeasureState(label, i, this.numberOfMeasurement), task, listeners).run();
         }
     }
 
     private void doWarmup(Runnable task) {
         for (int i = 0; i < this.numberOfWarmUp; i++) {
-            TimeMeasureProxy tmp =
-                    new TimeMeasureProxy(new MeasureState("_warmup_", i, this.numberOfWarmUp), task, listeners);
-            tmp.run();
+            new MeasureProxy(new MeasureState("_warmup_", i, this.numberOfWarmUp), task, listeners).run();
         }
     }
 
     /**
      * Decorated runnable which enables measurements.
      */
-    private static class TimeMeasureProxy implements Runnable {
+    private static class MeasureProxy implements Runnable {
 
         private MeasureState state;
         private Runnable runnable;
         private List<MeasureListener> listeners;
 
-        public TimeMeasureProxy(MeasureState state, Runnable runnable, List<MeasureListener> listeners) {
+        public MeasureProxy(MeasureState state, Runnable runnable, List<MeasureListener> listeners) {
             super();
             this.state = state;
             this.runnable = runnable;
@@ -428,8 +409,8 @@ public class NanoBench {
         }
 
         private void outputMeasureInfo(MeasureState state) {
-            MemoryUtil.restoreJvm();
-            memoryUsed += MemoryUtil.memoryUsed();
+            restoreJvm();
+            memoryUsed += utils.memoryUsed();
 
             if (isEnd(state)) {
                 finalBytes = memoryUsed / count;
@@ -456,43 +437,6 @@ public class NanoBench {
 
         private boolean isEnd(MeasureState state) {
             return count == state.getMeasurements();
-        }
-    }
-
-    /**
-     * Utility memory class to perform GC and calculate memory usage
-     */
-    public static class MemoryUtil {
-
-        /**
-         * Call GC until no more memory can be freed
-         */
-        public static void restoreJvm() {
-            int maxRestoreJvmLoops = 10;
-            long memUsedPrev = memoryUsed();
-            for (int i = 0; i < maxRestoreJvmLoops; i++) {
-                System.runFinalization();
-                System.gc();
-
-                long memUsedNow = memoryUsed();
-                // break early if have no more finalization and get constant mem used
-                if ((ManagementFactory.getMemoryMXBean().getObjectPendingFinalizationCount() == 0) && (memUsedNow
-                        >= memUsedPrev)) {
-                    break;
-                } else {
-                    memUsedPrev = memUsedNow;
-                }
-            }
-        }
-
-        /**
-         * Return the memory used in bytes
-         *
-         * @return heap memory used in bytes
-         */
-        public static long memoryUsed() {
-            Runtime rt = Runtime.getRuntime();
-            return rt.totalMemory() - rt.freeMemory();
         }
     }
 }
