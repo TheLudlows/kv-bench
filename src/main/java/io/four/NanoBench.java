@@ -26,8 +26,8 @@ public class NanoBench {
 
     public NanoBench() {
         listeners = new ArrayList(2);
-        listeners.add(new CPUMeasure(logger));
-        listeners.add(new MemoryUsage(logger));
+        listeners.add(new CPUMeasureListener(logger));
+        listeners.add(new MemoryUsageListener(logger));
     }
 
     public NanoBench measurements(int numberOfMeasurement) {
@@ -42,8 +42,8 @@ public class NanoBench {
 
     public NanoBench cpuAndMemory() {
         listeners = new ArrayList(2);
-        listeners.add(new CPUMeasure(logger));
-        listeners.add(new MemoryUsage(logger));
+        listeners.add(new CPUMeasureListener(logger));
+        listeners.add(new MemoryUsageListener(logger));
         return this;
     }
 
@@ -63,60 +63,60 @@ public class NanoBench {
 
     public NanoBench cpuOnly() {
         listeners = new ArrayList(1);
-        listeners.add(new CPUMeasure(logger));
+        listeners.add(new CPUMeasureListener(logger));
         return this;
     }
 
     public NanoBench memoryOnly() {
         listeners = new ArrayList(1);
-        listeners.add(new MemoryUsage(logger));
+        listeners.add(new MemoryUsageListener(logger));
         return this;
     }
 
     public double getAvgTime() {
-        CPUMeasure cpuMeasure = getCPUMeasure();
+        CPUMeasureListener cpuMeasure = getCPUMeasure();
         return cpuMeasure.getFinalAvg();
     }
 
     public double getTotalTime() {
-        CPUMeasure cpuMeasure = getCPUMeasure();
-        return cpuMeasure.getFinalTotal();
+        CPUMeasureListener cpuMeasureListener = getCPUMeasure();
+        return cpuMeasureListener.getFinalTotal();
     }
 
     public double getTps() {
-        CPUMeasure cpuMeasure = getCPUMeasure();
-        return cpuMeasure.getFinalTps();
+        CPUMeasureListener cpuMeasureListener = getCPUMeasure();
+        return cpuMeasureListener.getFinalTps();
     }
 
     public long getMemoryBytes() {
-        MemoryUsage memoryUsage = getMemoryUsage();
-        return memoryUsage.getFinalBytes();
+        MemoryUsageListener memoryUsageListener = getMemoryUsage();
+        return memoryUsageListener.getFinalBytes();
     }
 
-    private MemoryUsage getMemoryUsage() {
+    private MemoryUsageListener getMemoryUsage() {
         MeasureListener listener = null;
         for (MeasureListener ml : listeners) {
-            if (ml instanceof MemoryUsage) {
+            if (ml instanceof MemoryUsageListener) {
                 listener = ml;
             }
         }
         if (listener == null) {
             throw new RuntimeException("Can't find memory measures");
         }
-        return (MemoryUsage) listener;
+        return (MemoryUsageListener) listener;
     }
 
-    private CPUMeasure getCPUMeasure() {
+    private CPUMeasureListener getCPUMeasure() {
         MeasureListener listener = null;
         for (MeasureListener ml : listeners) {
-            if (ml instanceof CPUMeasure) {
+            if (ml instanceof CPUMeasureListener) {
                 listener = ml;
             }
         }
         if (listener == null) {
             throw new RuntimeException("Can't find CPU measures");
         }
-        return (CPUMeasure) listener;
+        return (CPUMeasureListener) listener;
     }
 
     public void measure(String label, Runnable task) {
@@ -279,7 +279,7 @@ public class NanoBench {
      * average time spent, the total time and the number of measurement per
      * seconds.
      */
-    public static class CPUMeasure implements MeasureListener {
+    public static class CPUMeasureListener implements MeasureListener {
 
         private static final double BY_SECONDS = 1000000000.0;
         private final Logger log;
@@ -292,7 +292,7 @@ public class NanoBench {
         private double finalAvg;
         private double finalTotal;
 
-        public CPUMeasure(Logger logger) {
+        public CPUMeasureListener(Logger logger) {
             this.log = logger;
         }
 
@@ -389,7 +389,7 @@ public class NanoBench {
      * calculate free memory. At the last measurement it shows the average
      * memory usage.
      */
-    private static class MemoryUsage implements MeasureListener {
+    private static class MemoryUsageListener implements MeasureListener {
 
         private final Logger log;
         private static final DecimalFormat integerFormat = new DecimalFormat("#,##0.000");
@@ -398,7 +398,7 @@ public class NanoBench {
         // Final
         private long finalBytes;
 
-        public MemoryUsage(Logger logger) {
+        public MemoryUsageListener(Logger logger) {
             this.log = logger;
         }
 

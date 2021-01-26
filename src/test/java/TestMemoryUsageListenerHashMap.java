@@ -20,7 +20,7 @@ import io.four.NanoBench;
 import org.testng.annotations.Test;
 
 
-public class TestMemoryUsageHashMap {
+public class TestMemoryUsageListenerHashMap {
 
   private Set<Integer> ref;
 
